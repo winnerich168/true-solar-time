@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<!--
+  真太陽時換算器 True Solar Time Calculator
+  Original Author: 林勝烽 (Lin Sheng-Feng) / 奉熙易理研究所 winnerich.com
+  License: MIT
+  Repository: https://github.com/YOUR_USERNAME/true-solar-time
+  Formula: Jean Meeus Astronomical Algorithms §25 + NASA Espenak-Meeus ΔT
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>真太陽時換算器 | 奉熙易理 winnerich.com</title>
+<meta name="description" content="校正出生時間的真太陽時,讓紫微、八字、河洛、易經命盤推算更精準。免費線上工具,涵蓋全球 80+ 城市,採 Jean Meeus 天文公式計算均時差,精度 ±7 秒。">
+<meta name="keywords" content="真太陽時,出生時間校正,八字 真太陽時,紫微 真太陽時,均時差,經度時差,時辰計算">
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+  background: #f5f5f0;
+  color: #2c2c2a;
+  line-height: 1.6;
+  padding: 20px 16px;
+}
+.container { max-width: 960px; margin: 0 auto; }
+
+.header { text-align: center; margin-bottom: 24px; }
+.header h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; color: #2c2c2a; }
+.header p { font-size: 14px; color: #5f5e5a; margin: 0; }
+.header .brand { font-size: 12px; color: #888780; margin-top: 8px; }
+
+.intro-box {
+  background: #E6F1FB;
+  border: 0.5px solid rgba(12,68,124,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #0C447C;
+  line-height: 1.7;
+}
+.intro-box .t { font-weight: 500; margin-bottom: 4px; }
+
+/* 摺疊說明區 */
+.method-section {
+  background: #fff;
+  border: 0.5px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.method-section summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #2c2c2a;
+  background: #fff;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.method-section summary::-webkit-details-marker { display: none; }
+.method-section summary::after {
+  content: "▾";
+  font-size: 12px;
+  color: #888780;
+  transition: transform 0.2s;
+}
+.method-section[open] summary::after { transform: rotate(180deg); }
+.method-section[open] summary { border-bottom: 0.5px solid rgba(0,0,0,0.08); }
+.method-content { padding: 16px 20px 20px; }
+.method-content h3 { font-size: 15px; font-weight: 500; margin: 18px 0 8px; }
+.method-content h3:first-child { margin-top: 0; }
+.method-content p { font-size: 13px; line-height: 1.8; margin: 0 0 8px; color: #444441; }
+
+.error-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+@media (max-width: 600px) { .error-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .error-grid { grid-template-columns: 1fr; } }
+.error-card { background: #f5f5f0; padding: 12px; border-radius: 8px; }
+.error-card .icon { font-size: 22px; margin-bottom: 4px; }
+.error-card .title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.error-card .desc { font-size: 12px; color: #5f5e5a; line-height: 1.6; }
+
+.geo-figure { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 16px; margin: 14px 0; }
+.geo-figure .cap { font-size: 13px; font-weight: 500; color: #0C447C; margin: 0 0 10px; }
+.geo-figure svg { width: 100%; height: auto; display: block; }
+.geo-figure .note { font-size: 12px; color: #5f5e5a; line-height: 1.7; margin: 10px 0 0; }
+.geo-figure .note b { color: #2c2c2a; }
+
+.hemi-note { background: #E6F1FB; border: 0.5px solid rgba(12,68,124,0.18); border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
+.hemi-note .ht { font-size: 13px; font-weight: 500; color: #0C447C; margin: 0 0 8px; }
+.hemi-note p { font-size: 12px; line-height: 1.8; color: #3a4a5e; margin: 0 0 8px; }
+.hemi-note p:last-child { margin-bottom: 0; }
+.hemi-note b { color: #0C447C; }
+.hemi-note .tag-row { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.hemi-note .htag { font-size: 11px; padding: 2px 9px; border-radius: 99px; background: #fff; border: 0.5px solid rgba(12,68,124,0.2); color: #0C447C; }
+.hemi-note .caveat { border-top: 0.5px dashed rgba(12,68,124,0.2); padding-top: 8px; margin-top: 8px; font-size: 11px; color: #5f6e80; }
+.geo-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 11px; color: #5f5e5a; }
+.geo-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.geo-legend i { width: 14px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }
+
+.step-block { margin-bottom: 12px; }
+.step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.step-num { background: #E6F1FB; color: #0C447C; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.step-title { font-weight: 500; font-size: 14px; }
+.step-desc { font-size: 13px; color: #5f5e5a; margin: 0 0 6px 30px; line-height: 1.7; }
+.step-formula { margin-left: 30px; font-family: ui-monospace, "SF Mono", Monaco, monospace; font-size: 12px; background: #f5f5f0; padding: 8px 12px; border-radius: 6px; line-height: 1.7; }
+
+.source-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.source-table td { padding: 8px 6px; vertical-align: top; border-bottom: 0.5px solid rgba(0,0,0,0.08); line-height: 1.7; }
+.source-table td:first-child { color: #5f5e5a; width: 32%; }
+.source-table .sub { color: #888780; font-size: 12px; }
+
+.warn-box { background: #FAEEDA; border: 0.5px solid rgba(133,79,11,0.2); border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+.warn-box .title { font-size: 13px; font-weight: 500; color: #854F0B; margin: 0 0 6px; }
+.warn-box ul { margin: 0; padding-left: 20px; font-size: 12px; color: #854F0B; line-height: 1.7; }
+
+.scope-box { background: #E6F1FB; border: 0.5px solid rgba(12,68,124,0.2); border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+.scope-box .title { font-size: 14px; font-weight: 500; color: #0C447C; margin: 0 0 8px; }
+.scope-box p { font-size: 13px; color: #2c2c2a; margin: 0 0 8px; line-height: 1.7; }
+.scope-box p:last-child { margin-bottom: 0; }
+.scope-box .scope-row { display: flex; gap: 10px; font-size: 13px; line-height: 1.8; margin-bottom: 4px; }
+.scope-box .scope-row .tag { flex-shrink: 0; font-weight: 500; color: #0C447C; min-width: 80px; }
+.scope-box .scope-row .desc { color: #2c2c2a; }
+.scope-box .ref { background: rgba(12,68,124,0.06); border-radius: 6px; padding: 8px 12px; margin-top: 10px; font-size: 12px; color: #0C447C; line-height: 1.7; }
+.scope-box .ref b { color: #0C447C; }
+
+.case-box { background: #f5f5f0; border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+.case-formula { font-family: ui-monospace, "SF Mono", Monaco, monospace; font-size: 12px; line-height: 2; background: #fff; padding: 10px 12px; border-radius: 6px; margin: 8px 0; }
+.case-formula .total { border-top: 0.5px solid rgba(0,0,0,0.1); display: block; padding-top: 6px; margin-top: 4px; }
+
+/* 工具本體 */
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+
+.panel {
+  background: #fff;
+  border: 0.5px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.badge { font-size: 13px; padding: 5px 18px; border-radius: 999px; font-weight: 600; letter-spacing: 1px; }
+.geo-tab { font-size: 12px; padding: 5px 12px; border-radius: 999px; border: 0.5px solid rgba(12,68,124,0.3); background: #fff; color: #0C447C; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; transition: background 0.15s; white-space: nowrap; }
+.geo-tab:hover { background: #E6F1FB; }
+.geo-tab:active { transform: scale(0.97); }
+.geo-tab:disabled { opacity: 0.5; cursor: default; }
+.geo-msg { font-size: 11px; margin: -4px 0 8px; line-height: 1.6; padding: 6px 10px; border-radius: 6px; display: none; }
+.geo-msg.show { display: block; }
+.geo-msg.ok { background: #E3F2EC; color: #0F6E56; }
+.geo-msg.err { background: #FAEEDA; color: #854F0B; }
+.badge.a { background: #E6F1FB; color: #0C447C; }
+.badge.b { background: #FAEEDA; color: #854F0B; }
+
+.lbl { font-size: 12px; color: #5f5e5a; display: block; margin-bottom: 4px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+
+input, select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 0.5px solid rgba(0,0,0,0.15);
+  border-radius: 8px;
+  background: #fff;
+  color: #2c2c2a;
+  font-family: inherit;
+}
+input:focus, select:focus { outline: 2px solid #378ADD; outline-offset: -1px; border-color: #378ADD; }
+
+.result-card {
+  background: #f5f5f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.result-card .l { font-size: 11px; color: #5f5e5a; margin: 0 0 2px; }
+.result-card .v { font-size: 22px; font-weight: 500; margin: 0; color: #2c2c2a; font-variant-numeric: tabular-nums; }
+.result-card .m { font-size: 11px; color: #888780; margin: 3px 0 0; }
+
+details.steps { margin-top: 10px; }
+details.steps summary { font-size: 12px; color: #5f5e5a; cursor: pointer; padding: 4px 0; }
+.step-text { font-family: ui-monospace, "SF Mono", Monaco, monospace; font-size: 12px; line-height: 1.8; margin-top: 6px; color: #444441; }
+.step-text b { color: #2c2c2a; }
+.astro-detail { margin-top: 8px; border-top: 0.5px dashed rgba(0,0,0,0.15); padding-top: 6px; }
+.astro-detail summary { font-size: 11px; color: #0C447C; cursor: pointer; padding: 2px 0; font-family: -apple-system, "PingFang TC", sans-serif; }
+.astro-detail summary::-webkit-details-marker { color: #0C447C; }
+.astro-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px; }
+.astro-table td { padding: 3px 4px; border-bottom: 0.5px solid rgba(0,0,0,0.06); vertical-align: top; }
+.astro-table td:first-child { color: #5f5e5a; white-space: nowrap; font-family: -apple-system, "PingFang TC", sans-serif; }
+.astro-table td:last-child { text-align: right; color: #2c2c2a; font-variant-numeric: tabular-nums; }
+.astro-table .src { display: block; font-size: 9px; color: #aaa89f; font-family: -apple-system, "PingFang TC", sans-serif; margin-top: 1px; }
+
+.compare {
+  background: #fff;
+  border: 0.5px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.compare h3 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
+.compare-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px 16px; font-size: 13px; }
+.compare-grid .label { color: #5f5e5a; }
+.compare-grid .val b { font-weight: 500; }
+.compare-grid .muted { color: #888780; font-size: 11px; margin-left: 4px; }
+
+.verdict { border-top: 0.5px solid rgba(0,0,0,0.1); margin-top: 12px; padding-top: 12px; font-size: 13px; }
+.verdict.same { color: #0F6E56; }
+.verdict.diff { color: #BA7517; }
+.verdict .sub { color: #5f5e5a; margin: 4px 0 0; font-size: 12px; }
+
+input[type="text"][placeholder*="姓名"] { font-size: 12px; padding: 4px 8px; width: 110px; }
+
+.footer { text-align: center; font-size: 11px; color: #888780; margin-top: 24px; padding-top: 16px; border-top: 0.5px solid rgba(0,0,0,0.08); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>真太陽時換算器</h1>
+    <p>校正出生時間 · 提升命盤推算精準度 · 完全免費</p>
+    <p class="brand">奉熙易理研究所 / winnerich.com</p>
+  </div>
+
+  <div class="intro-box">
+    <div class="t">📐 公式核心:以 GMT 為錨點,東加西減,Et 隨日期變化</div>
+    真太陽時 = (手錶時間 − 時區) + 經度時差 (東+西−) + 均時差 Et
+  </div>
+
+  <!-- 摺疊式說明區 -->
+  <details class="method-section">
+    <summary>📖 計算法則與來源說明</summary>
+    <div class="method-content">
+
+      <h3>為什麼需要校正真太陽時?</h3>
+      <p>我們手錶上的時間是「政治時區時間」,並非真正的太陽時。同一個時區內,東邊比西邊先看到太陽,但時鐘卻顯示相同時間,這在命理推算上會造成時辰判斷誤差。</p>
+      <p>傳統紫微、八字、河洛等命理體系,皆以「太陽相對於出生地的真實位置」為依據。校正真太陽時後,時柱、命宮、宮位飛星才能精準對位,推論才有可靠基礎。</p>
+
+      <h3>三大誤差來源</h3>
+      <div class="error-grid">
+        <div class="error-card">
+          <div class="icon">🌐</div>
+          <div class="title">政治時區</div>
+          <div class="desc">人為劃分,與真實經度有落差(最多 ±30 分鐘)</div>
+        </div>
+        <div class="error-card">
+          <div class="icon">📍</div>
+          <div class="title">經度時差</div>
+          <div class="desc">每偏離 1° 經度差 4 分鐘真太陽時</div>
+        </div>
+        <div class="error-card">
+          <div class="icon">☀️</div>
+          <div class="title">均時差 Et</div>
+          <div class="desc">地球橢圓軌道造成,全年 −14 至 +16 分鐘</div>
+        </div>
+      </div>
+
+      <div class="geo-figure">
+        <p class="cap">📐 經度決定時刻,緯度不影響</p>
+        <svg viewBox="0 0 480 300" role="img" aria-label="同一條經線上不同緯度的點同時迎來正午,緯度只改變太陽高度">
+          <defs>
+            <radialGradient id="earthFill" cx="38%" cy="32%" r="80%">
+              <stop offset="0%" stop-color="#EAF2FB"/>
+              <stop offset="100%" stop-color="#D2E1F2"/>
+            </radialGradient>
+            <linearGradient id="rayFade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#F2B705" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#F2B705" stop-opacity="0.9"/>
+            </linearGradient>
+            <marker id="sunArrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+              <path d="M0,0 L6,3.5 L0,7 Z" fill="#D99A00"/>
+            </marker>
+          </defs>
+
+          <!-- 正午陽光:平行光束打在整條經線上 -->
+          <g stroke="url(#rayFade)" stroke-width="2">
+            <line x1="20" y1="70" x2="232" y2="70" marker-end="url(#sunArrow)"/>
+            <line x1="20" y1="150" x2="232" y2="150" marker-end="url(#sunArrow)"/>
+            <line x1="20" y1="230" x2="232" y2="230" marker-end="url(#sunArrow)"/>
+          </g>
+          <text x="22" y="56" font-size="11" fill="#D99A00" font-weight="600">正午陽光(平行)</text>
+
+          <!-- 地球 -->
+          <circle cx="300" cy="150" r="120" fill="url(#earthFill)" stroke="#9DB8D6" stroke-width="1"/>
+          <!-- 赤道 -->
+          <line x1="180" y1="150" x2="420" y2="150" stroke="#9DB8D6" stroke-width="1" stroke-dasharray="4 4"/>
+          <text x="426" y="154" font-size="10" fill="#7d8aa0">赤道</text>
+          <!-- 子午線(經線):正對太陽的那一條 -->
+          <path d="M300 30 A 60 120 0 0 0 300 270" fill="none" stroke="#0C447C" stroke-width="2.5"/>
+          <text x="246" y="24" font-size="11" fill="#0C447C" font-weight="600">同一條經線</text>
+
+          <!-- 四個緯度點 -->
+          <!-- 北緯25 -->
+          <circle cx="288" cy="78" r="5" fill="#0C447C"/>
+          <text x="276" y="74" font-size="10" fill="#2c2c2a" text-anchor="end">北緯25°</text>
+          <text x="276" y="86" font-size="9" fill="#0F6E56" text-anchor="end">12:00</text>
+          <!-- 赤道點 -->
+          <circle cx="300" cy="150" r="5" fill="#0C447C"/>
+          <text x="312" y="146" font-size="10" fill="#2c2c2a">赤道 0°</text>
+          <text x="312" y="158" font-size="9" fill="#0F6E56">12:00</text>
+          <!-- 南緯30 -->
+          <circle cx="290" cy="216" r="5" fill="#0C447C"/>
+          <text x="278" y="220" font-size="10" fill="#2c2c2a" text-anchor="end">南緯30°</text>
+          <text x="278" y="232" font-size="9" fill="#0F6E56" text-anchor="end">12:00</text>
+          <!-- 南緯50 -->
+          <circle cx="306" cy="256" r="5" fill="#0C447C"/>
+          <text x="318" y="252" font-size="10" fill="#2c2c2a">南緯50°</text>
+          <text x="318" y="264" font-size="9" fill="#0F6E56">12:00</text>
+        </svg>
+        <div class="geo-legend">
+          <span><i style="border-top-color:#F2B705"></i>正午陽光</span>
+          <span><i style="border-top-color:#0C447C"></i>同一條經線</span>
+          <span><i style="border-top-color:#9DB8D6;border-top-style:dashed"></i>赤道</span>
+        </div>
+        <p class="note">同一條<b>經線</b>上的所有地點,會在<b>同一瞬間</b>轉到正對太陽的位置 — 不論緯度高低、不論南北半球,<b>真太陽時的正午都是同一時刻</b>。緯度只改變太陽在天空的<b>高度</b>(赤道接近頭頂、高緯度斜射)與晝夜長短,<b>不改變時刻</b>。所以本工具只需輸入經度,不需要緯度。</p>
+      </div>
+
+      <div class="hemi-note">
+        <p class="ht">🌏 南半球出生者:時刻計算相同,屬性論斷請依流派</p>
+        <p>二十四節氣是<b>全球同步的天文事件</b> — 夏至那一刻,太陽到達黃經 90°,台灣、紐西蘭、阿根廷都在同一物理瞬間迎來夏至,只是當地時鐘讀數不同。因此:</p>
+        <div class="tag-row">
+          <span class="htag">✓ 節氣時刻:南北半球完全相同</span>
+          <span class="htag">✓ 真太陽時:南北半球完全相同</span>
+        </div>
+        <p>本工具的節氣與真太陽時計算,<b>南北半球一視同仁,無需任何調整</b>。南半球某人 1 月出生,天文上就是冬至後的子月(水旺),這是太陽黃經決定的,與當地是否盛夏無關。</p>
+        <p class="caveat">⚠ 惟南半球氣候與北半球相反(其 1 月為盛夏),<b>月令五行屬性是否需依當地實際季節翻轉調整</b>,屬命理<b>論斷</b>範疇 — 主流天文派主張不調整(以太陽黃經為準),亦有流派主張依當地寒暖翻轉屬性。各家見解不一,請依所宗流派判斷。本工具僅提供<b>天文層級的精確時刻</b>,不介入論斷選擇。</p>
+      </div>
+
+      <h3>推算公式四步驟</h3>
+
+      <div class="step-block">
+        <div class="step-head"><span class="step-num">1</span><span class="step-title">退回宇宙起點(求出 GMT)</span></div>
+        <p class="step-desc">消除政治時區與夏令時間干擾,將手錶時間還原為格林威治標準時間。</p>
+        <div class="step-formula">GMT = 當地手錶時間 − 當地時區 (UTC Offset)</div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-head"><span class="step-num">2</span><span class="step-title">地表絕對經度時差(平太陽時)</span></div>
+        <p class="step-desc">利用「1 度差 4 分鐘」的物理特性,算出該經度與 0 度線的自然時差。</p>
+        <div class="step-formula">
+          經度時差(分鐘)= 該城市經度 × 4<br>
+          東經(E):加上去 (+) · 西經(W):減掉 (−)
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-head"><span class="step-num">3</span><span class="step-title">匯入宇宙均時差 Et(地球公轉誤差)</span></div>
+        <p class="step-desc">依出生日期自動計算當天的均時差,正值加上、負值扣除。</p>
+        <div class="step-formula">
+          B = (N − 81) × 360° / 365<br>
+          Et = 9.87·sin(2B) − 7.53·cos(B) − 1.5·sin(B)<br>
+          <span style="color:#888780;">N 為一年中第幾天</span>
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-head"><span class="step-num">4</span><span class="step-title">大一統輸出(真太陽時)</span></div>
+        <p class="step-desc">將上述三項總和,得出該地點符合自然規律的精確真太陽時。</p>
+        <div class="step-formula">真太陽時 = GMT + 經度時差 (東+西−) + Et</div>
+      </div>
+
+      <h3>計算法則與資料來源</h3>
+
+      <div class="scope-box">
+        <div class="title">🎯 工具定位</div>
+        <p>本工具採 <b>Jean Meeus 天文公式</b>(精度 ±7 秒)計算真太陽時,適用於<b>命理時辰與刻級定位</b>。</p>
+        <div class="scope-row">
+          <span class="tag">✓ 適用(時辰級)</span>
+          <span class="desc">八字、紫微時柱定位(2 小時窗口,誤差佔比 0.10%)</span>
+        </div>
+        <div class="scope-row">
+          <span class="tag">✓ 適用(刻級)</span>
+          <span class="desc">飛星入斗、刻卦等精細推算(15 分鐘窗口,誤差佔比 1.6%,搭配中間值判讀)</span>
+        </div>
+        <div class="scope-row">
+          <span class="tag">✗ 不適用</span>
+          <span class="desc">節氣交時、易日邊界判讀(屬天文事件,請使用六日七分擇日法)</span>
+        </div>
+        <div class="ref">
+          📐 概念釐清:節氣是「太陽到達某黃經」的瞬間,屬<b>全球同步天文事件</b>,與觀測者經度無關,只與時區有關。經度真正影響的是「真太陽時」(太陽於當地頭頂正上方的時鐘時刻),屬命理時辰定位範疇。<br>
+          擇日學的「節氣交時」、「易日邊界」精確判讀,請使用奉熙易理「<b>六日七分擇日法</b>」工具(採 Meeus 公式 + 權威資料源錨定,精度 ±7 秒)。
+        </div>
+      </div>
+
+      <table class="source-table">
+        <tr>
+          <td>時區資料</td>
+          <td>IANA Time Zone Database (tzdata)<br><span class="sub">國際標準時區資料庫,Linux/macOS/iOS 內建</span></td>
+        </tr>
+        <tr>
+          <td>城市經度資料</td>
+          <td>GeoNames 地理資料庫<br><span class="sub">由瑞士地理資訊機構維護,涵蓋全球 1100 萬個地名</span></td>
+        </tr>
+        <tr>
+          <td>均時差公式</td>
+          <td>Jean Meeus《Astronomical Algorithms》§25, §28<br><span class="sub">完整太陽視黃經公式(平黃經 L₀ + 中心差 C + 章動 + 光行差),精度約 ±7 秒</span></td>
+        </tr>
+        <tr>
+          <td>ΔT 時間修正</td>
+          <td>NASA Espenak-Meeus ΔT 多項式<br><span class="sub">世界時 (UT) 與地球力學時 (TT) 之差,2026 年約 +75 秒,逐年增加</span></td>
+        </tr>
+        <tr>
+          <td>時辰對照</td>
+          <td>中國傳統十二時辰制<br><span class="sub">23 時起子時,每兩小時一時辰,共十二時辰</span></td>
+        </tr>
+        <tr>
+          <td>計算引擎</td>
+          <td>奉熙易理研究所自主開發 FengxiAstro<br><span class="sub">純前端 JavaScript,規格對齊六日七分擇日法,不上傳任何個人資料</span></td>
+        </tr>
+      </table>
+
+      <div class="warn-box">
+        <div class="title">⚠️ 精度與限制說明</div>
+        <ul>
+          <li>本工具採用 Jean Meeus 完整公式(§25 + ΔT 修正),均時差精度 ±7 秒。對時辰判斷(2 小時窗口)誤差佔比 0.10%;對刻判斷(15 分鐘窗口)誤差佔比 1.6%,搭配「中間值判讀」策略可完全吸收公式誤差</li>
+          <li>城市經度為市中心參考值,若出生地遠離市中心,建議手動微調經度(0.1° 經度差約 24 秒時差)</li>
+          <li>本工具不適用於毫秒級天文觀測,亦不適用於擇日學易日邊界判讀</li>
+          <li>夏令時間 (DST) 已透過 GMT 校正機制自動消除</li>
+          <li>歷史時期(如清朝、民國早期)的時區制度與現行不同,使用時需自行考量</li>
+        </ul>
+      </div>
+
+      <div class="case-box">
+        <div style="font-size: 14px; font-weight: 500; margin-bottom: 6px;">📌 實戰案例:紐約立冬日</div>
+        <p style="font-size: 13px; color: #5f5e5a; margin: 0 0 6px; line-height: 1.7;">某人於 11/7 立冬,在紐約(西經 74°W,時區 UTC−5)的手錶時間 05:00 出生。</p>
+        <div class="case-formula">
+          ① 手錶 05:00 (UTC−5) → GMT 10:00<br>
+          ② 經度時差 74° × 4 = 296 分鐘 = 4 小時 56 分(西經,扣除)<br>
+          ③ Et(11/7)= +16′18″ ≈ +16 分(Meeus §28 計算)<br>
+          <span class="total">④ 10:00 − 4:56 + 0:16 = <b>05:20</b> (卯時)</span>
+        </div>
+        <p style="font-size: 12px; color: #5f5e5a; margin: 8px 0 0; line-height: 1.7;">若手錶時間是 04:50,經校正後為 05:10,時辰會從「寅時」精準切換到「卯時」——這正是真太陽時校正的關鍵價值。</p>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- 工具本體 -->
+  <div class="panels">
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="badge a">A 案</span>
+        <button type="button" class="geo-tab" id="geoTabA">📍 目前位置</button>
+      </div>
+      <div class="geo-msg" id="geoMsgA"></div>
+      <div class="row2">
+        <div><label class="lbl">日期</label><input type="date" id="dateA" /></div>
+        <div><label class="lbl">手錶時間</label><input type="time" id="timeA" /></div>
+      </div>
+      <div class="row2">
+        <div><label class="lbl">國家/地區</label><select id="countryA"></select></div>
+        <div><label class="lbl">城市</label><select id="cityA"></select></div>
+      </div>
+      <div class="row3">
+        <div><label class="lbl">經度</label><input type="number" id="lonA" step="0.01" /></div>
+        <div><label class="lbl">東/西</label><select id="hemA"><option value="E">東 E</option><option value="W">西 W</option></select></div>
+        <div><label class="lbl">時區</label><input type="number" id="tzA" step="0.5" /></div>
+      </div>
+      <div class="result-card">
+        <p class="l">真太陽時</p>
+        <p class="v" id="resultA">—</p>
+        <p class="m" id="dateOutA">—</p>
+      </div>
+      <div class="result-card">
+        <p class="l">對應時辰</p>
+        <p class="v" id="shichenA">—</p>
+        <p class="m" id="shichenRangeA">—</p>
+      </div>
+      <details class="steps"><summary>推算過程</summary><div class="step-text" id="stepsA"></div></details>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="badge b">B 案</span>
+        <button type="button" class="geo-tab" id="geoTabB">📍 目前位置</button>
+      </div>
+      <div class="geo-msg" id="geoMsgB"></div>
+      <div class="row2">
+        <div><label class="lbl">日期</label><input type="date" id="dateB" /></div>
+        <div><label class="lbl">手錶時間</label><input type="time" id="timeB" /></div>
+      </div>
+      <div class="row2">
+        <div><label class="lbl">國家/地區</label><select id="countryB"></select></div>
+        <div><label class="lbl">城市</label><select id="cityB"></select></div>
+      </div>
+      <div class="row3">
+        <div><label class="lbl">經度</label><input type="number" id="lonB" step="0.01" /></div>
+        <div><label class="lbl">東/西</label><select id="hemB"><option value="E">東 E</option><option value="W">西 W</option></select></div>
+        <div><label class="lbl">時區</label><input type="number" id="tzB" step="0.5" /></div>
+      </div>
+      <div class="result-card">
+        <p class="l">真太陽時</p>
+        <p class="v" id="resultB">—</p>
+        <p class="m" id="dateOutB">—</p>
+      </div>
+      <div class="result-card">
+        <p class="l">對應時辰</p>
+        <p class="v" id="shichenB">—</p>
+        <p class="m" id="shichenRangeB">—</p>
+      </div>
+      <details class="steps"><summary>推算過程</summary><div class="step-text" id="stepsB"></div></details>
+    </div>
+  </div>
+
+  <div class="compare">
+    <h3>比對摘要</h3>
+    <div id="compare"></div>
+  </div>
+
+  <div class="footer">
+    奉熙易理研究所 · 真太陽時換算 v2.7 (Meeus 引擎) · 完全免費 · 純前端計算<br>
+    <span style="opacity: 0.75;">原作者 林勝烽 · <a href="https://winnerich.com" style="color: inherit; text-decoration: none;">winnerich.com</a></span>
+  </div>
+
+</div>
+
+<script>
+const DATA = {
+  '台灣': [
+    { name: '台北', lon: 121.5654, hem: 'E', tz: 8 }, { name: '新北', lon: 121.4628, hem: 'E', tz: 8 },
+    { name: '桃園', lon: 121.3010, hem: 'E', tz: 8 }, { name: '台中', lon: 120.6736, hem: 'E', tz: 8 },
+    { name: '台南', lon: 120.2270, hem: 'E', tz: 8 }, { name: '高雄', lon: 120.3014, hem: 'E', tz: 8 },
+    { name: '新竹', lon: 120.9647, hem: 'E', tz: 8 }, { name: '基隆', lon: 121.7419, hem: 'E', tz: 8 },
+    { name: '嘉義', lon: 120.4473, hem: 'E', tz: 8 }, { name: '宜蘭', lon: 121.7539, hem: 'E', tz: 8 },
+    { name: '花蓮', lon: 121.6075, hem: 'E', tz: 8 }, { name: '台東', lon: 121.1132, hem: 'E', tz: 8 },
+    { name: '澎湖', lon: 119.5793, hem: 'E', tz: 8 }, { name: '金門', lon: 118.3186, hem: 'E', tz: 8 }
+  ],
+  '中國': [
+    { name: '北京', lon: 116.4074, hem: 'E', tz: 8 }, { name: '上海', lon: 121.4737, hem: 'E', tz: 8 },
+    { name: '廣州', lon: 113.2644, hem: 'E', tz: 8 }, { name: '深圳', lon: 114.0579, hem: 'E', tz: 8 },
+    { name: '成都', lon: 104.0668, hem: 'E', tz: 8 }, { name: '重慶', lon: 106.5516, hem: 'E', tz: 8 },
+    { name: '杭州', lon: 120.1551, hem: 'E', tz: 8 }, { name: '南京', lon: 118.7969, hem: 'E', tz: 8 },
+    { name: '武漢', lon: 114.3055, hem: 'E', tz: 8 }, { name: '西安', lon: 108.9398, hem: 'E', tz: 8 },
+    { name: '青島', lon: 120.3826, hem: 'E', tz: 8 }, { name: '廈門', lon: 118.0894, hem: 'E', tz: 8 },
+    { name: '哈爾濱', lon: 126.6425, hem: 'E', tz: 8 }, { name: '長春', lon: 125.3245, hem: 'E', tz: 8 },
+    { name: '瀋陽', lon: 123.4315, hem: 'E', tz: 8 }, { name: '昆明', lon: 102.8329, hem: 'E', tz: 8 },
+    { name: '烏魯木齊', lon: 87.6168, hem: 'E', tz: 8 }, { name: '拉薩', lon: 91.1409, hem: 'E', tz: 8 }
+  ],
+  '香港澳門': [
+    { name: '香港', lon: 114.1694, hem: 'E', tz: 8 }, { name: '澳門', lon: 113.5439, hem: 'E', tz: 8 }
+  ],
+  '日本': [
+    { name: '東京', lon: 139.6917, hem: 'E', tz: 9 }, { name: '大阪', lon: 135.5023, hem: 'E', tz: 9 },
+    { name: '京都', lon: 135.7681, hem: 'E', tz: 9 }, { name: '名古屋', lon: 136.9066, hem: 'E', tz: 9 },
+    { name: '橫濱', lon: 139.6380, hem: 'E', tz: 9 }, { name: '札幌', lon: 141.3545, hem: 'E', tz: 9 },
+    { name: '福岡', lon: 130.4017, hem: 'E', tz: 9 }, { name: '神戶', lon: 135.1955, hem: 'E', tz: 9 },
+    { name: '沖繩', lon: 127.6809, hem: 'E', tz: 9 }
+  ],
+  '韓國': [
+    { name: '首爾', lon: 126.9780, hem: 'E', tz: 9 }, { name: '釜山', lon: 129.0756, hem: 'E', tz: 9 },
+    { name: '仁川', lon: 126.7052, hem: 'E', tz: 9 }, { name: '濟州', lon: 126.5312, hem: 'E', tz: 9 }
+  ],
+  '東南亞': [
+    { name: '新加坡', lon: 103.8198, hem: 'E', tz: 8 }, { name: '吉隆坡', lon: 101.6869, hem: 'E', tz: 8 },
+    { name: '曼谷', lon: 100.5018, hem: 'E', tz: 7 }, { name: '雅加達', lon: 106.8456, hem: 'E', tz: 7 },
+    { name: '馬尼拉', lon: 120.9842, hem: 'E', tz: 8 }, { name: '胡志明市', lon: 106.6297, hem: 'E', tz: 7 },
+    { name: '河內', lon: 105.8542, hem: 'E', tz: 7 }
+  ],
+  '美國': [
+    { name: '紐約', lon: 74.0060, hem: 'W', tz: -5 }, { name: '洛杉磯', lon: 118.2437, hem: 'W', tz: -8 },
+    { name: '舊金山', lon: 122.4194, hem: 'W', tz: -8 }, { name: '芝加哥', lon: 87.6298, hem: 'W', tz: -6 },
+    { name: '休士頓', lon: 95.3698, hem: 'W', tz: -6 }, { name: '西雅圖', lon: 122.3321, hem: 'W', tz: -8 },
+    { name: '波士頓', lon: 71.0589, hem: 'W', tz: -5 }, { name: '華盛頓DC', lon: 77.0369, hem: 'W', tz: -5 },
+    { name: '邁阿密', lon: 80.1918, hem: 'W', tz: -5 }, { name: '拉斯維加斯', lon: 115.1398, hem: 'W', tz: -8 },
+    { name: '夏威夷檀香山', lon: 157.8583, hem: 'W', tz: -10 }, { name: '阿拉斯加安克拉治', lon: 149.9003, hem: 'W', tz: -9 }
+  ],
+  '加拿大': [
+    { name: '多倫多', lon: 79.3832, hem: 'W', tz: -5 }, { name: '溫哥華', lon: 123.1207, hem: 'W', tz: -8 },
+    { name: '蒙特婁', lon: 73.5673, hem: 'W', tz: -5 }, { name: '渥太華', lon: 75.6972, hem: 'W', tz: -5 }
+  ],
+  '歐洲': [
+    { name: '倫敦', lon: 0.1276, hem: 'W', tz: 0 }, { name: '巴黎', lon: 2.3522, hem: 'E', tz: 1 },
+    { name: '柏林', lon: 13.4050, hem: 'E', tz: 1 }, { name: '羅馬', lon: 12.4964, hem: 'E', tz: 1 },
+    { name: '馬德里', lon: 3.7038, hem: 'W', tz: 1 }, { name: '阿姆斯特丹', lon: 4.9041, hem: 'E', tz: 1 },
+    { name: '蘇黎世', lon: 8.5417, hem: 'E', tz: 1 }, { name: '維也納', lon: 16.3738, hem: 'E', tz: 1 },
+    { name: '莫斯科', lon: 37.6173, hem: 'E', tz: 3 }, { name: '伊斯坦堡', lon: 28.9784, hem: 'E', tz: 3 }
+  ],
+  '澳紐': [
+    { name: '雪梨', lon: 151.2093, hem: 'E', tz: 10 }, { name: '墨爾本', lon: 144.9631, hem: 'E', tz: 10 },
+    { name: '布里斯本', lon: 153.0251, hem: 'E', tz: 10 }, { name: '伯斯', lon: 115.8605, hem: 'E', tz: 8 },
+    { name: '奧克蘭', lon: 174.7633, hem: 'E', tz: 12 }, { name: '威靈頓', lon: 174.7762, hem: 'E', tz: 12 }
+  ]
+};
+
+/* ============================================================
+   FengxiAstro — 奉熙易理天文計算核心 (JavaScript)
+   規格對齊六日七分擇日法 Python 版 (Meeus §25 完整公式 + ΔT)
+   精度約 ±7 秒。未來可抽出為 fengxi-astro.js 共用模組,
+   供真太陽時、飛星入斗、刻卦等工具共用同一天文引擎。
+   ============================================================ */
+const FengxiAstro = {
+  // 儒略日 (Meeus §7)
+  julianDay(y, m, d, hour = 0, min = 0, sec = 0) {
+    if (m <= 2) { y -= 1; m += 12; }
+    const A = Math.floor(y / 100);
+    const B = 2 - A + Math.floor(A / 4);
+    const dayFrac = d + (hour + min / 60 + sec / 3600) / 24;
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + dayFrac + B - 1524.5;
+  },
+  // ΔT 時間修正,單位:秒 (NASA Espenak-Meeus 多項式)
+  deltaT(year) {
+    return 62.92 + 0.32217 * (year - 2000) + 0.005589 * Math.pow(year - 2000, 2);
+  },
+  // 太陽位置 (Meeus §25),輸入儒略日(TT)
+  sun(jdTT) {
+    const T = (jdTT - 2451545.0) / 36525.0;
+    const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;          // 平黃經 §25.2
+    const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;           // 平近點角 §25.3
+    const Mr = (M % 360) * Math.PI / 180;
+    const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(Mr) // 中心差 §25.4
+            + (0.019993 - 0.000101 * T) * Math.sin(2 * Mr)
+            + 0.000289 * Math.sin(3 * Mr);
+    const trueLon = L0 + C;                                              // 真黃經
+    const omega = 125.04 - 1934.136 * T;                                 // 章動參數 Ω §22
+    const appLon = trueLon - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180); // 視黃經 §25.5
+    const eps0 = 23 + 26 / 60 + 21.448 / 3600
+               - (46.8150 * T + 0.00059 * T * T - 0.001813 * T * T * T) / 3600;   // 平黃赤交角 §22
+    const eps = eps0 + 0.00256 * Math.cos(omega * Math.PI / 180);        // 視黃赤交角(含章動)
+    return { T, L0, M, C, omega, trueLon, appLon, eps };
+  },
+  // 均時差 Et,單位:分鐘 (Meeus §28)。輸入 UT 年月日時。
+  // 回傳 {eot, detail} — detail 含各天文參數供透明展示
+  equationOfTime(year, month, day, hourUT = 12) {
+    const jdUT = this.julianDay(year, month, day, hourUT);
+    const dt = this.deltaT(year);
+    const jdTT = jdUT + dt / 86400.0;
+    const s = this.sun(jdTT);
+    const lam = s.appLon * Math.PI / 180;
+    const epsr = s.eps * Math.PI / 180;
+    let alpha = Math.atan2(Math.cos(epsr) * Math.sin(lam), Math.cos(lam)) * 180 / Math.PI;
+    alpha = ((alpha % 360) + 360) % 360;                                 // 太陽赤經 α
+    const deltaPsi = -0.00478 * Math.sin(s.omega * Math.PI / 180);       // 章動黃經(近似)
+    let E = (((s.L0 % 360) + 360) % 360) - 0.0057183 - alpha + deltaPsi * Math.cos(epsr);
+    while (E > 180) E -= 360;
+    while (E < -180) E += 360;
+    return {
+      eot: E * 4,  // 度 → 分鐘
+      detail: { jdUT, jdTT, deltaT: dt, T: s.T, L0: ((s.L0 % 360) + 360) % 360,
+                M: ((s.M % 360) + 360) % 360, C: s.C, omega: ((s.omega % 360) + 360) % 360,
+                appLon: ((s.appLon % 360) + 360) % 360, alpha, eps: s.eps }
+    };
+  }
+};
+function fmtEotMS(eotMin) {
+  const sign = eotMin < 0 ? '−' : '+';
+  const abs = Math.abs(eotMin);
+  const m = Math.floor(abs);
+  const s = Math.round((abs - m) * 60);
+  if (s === 60) return `${sign}${m + 1}′00″`;
+  return `${sign}${m}′${String(s).padStart(2, '0')}″`;
+}
+
+const SHICHEN = [
+  { name: '子時', range: '23:00–01:00', start: 23, end: 1 },
+  { name: '丑時', range: '01:00–03:00', start: 1, end: 3 },
+  { name: '寅時', range: '03:00–05:00', start: 3, end: 5 },
+  { name: '卯時', range: '05:00–07:00', start: 5, end: 7 },
+  { name: '辰時', range: '07:00–09:00', start: 7, end: 9 },
+  { name: '巳時', range: '09:00–11:00', start: 9, end: 11 },
+  { name: '午時', range: '11:00–13:00', start: 11, end: 13 },
+  { name: '未時', range: '13:00–15:00', start: 13, end: 15 },
+  { name: '申時', range: '15:00–17:00', start: 15, end: 17 },
+  { name: '酉時', range: '17:00–19:00', start: 17, end: 19 },
+  { name: '戌時', range: '19:00–21:00', start: 19, end: 21 },
+  { name: '亥時', range: '21:00–23:00', start: 21, end: 23 }
+];
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtMin(t) { const s = t < 0 ? -1 : 1; const a = Math.abs(t); const h = Math.floor(a / 60); const m = Math.round(a % 60); return (s < 0 ? '−' : '') + (h > 0 ? `${h}小時` : '') + `${m}分鐘`; }
+function minutesFromHM(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; }
+function hmFromMinutes(min) { let m = ((min % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(Math.round(m % 60))}`; }
+function getShichen(min) {
+  const hour = min / 60;
+  for (const s of SHICHEN) {
+    if (s.start > s.end) { if (hour >= s.start || hour < s.end) return s; }
+    else { if (hour >= s.start && hour < s.end) return s; }
+  }
+  return SHICHEN[0];
+}
+
+function fillCountry(id, def) {
+  const sel = document.getElementById(id);
+  Object.keys(DATA).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    if (c === def) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function fillCity(cid, sid, def) {
+  const country = document.getElementById(cid).value;
+  const sel = document.getElementById(sid);
+  sel.innerHTML = '';
+  DATA[country].forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.name; o.textContent = c.name;
+    if (c.name === def) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function applyCity(cid, sid, lid, hid, tid) {
+  const country = document.getElementById(cid).value;
+  const name = document.getElementById(sid).value;
+  const c = DATA[country].find(x => x.name === name);
+  if (c) {
+    document.getElementById(lid).value = c.lon;
+    document.getElementById(hid).value = c.hem;
+    document.getElementById(tid).value = c.tz;
+  }
+}
+
+/* ============================================================
+   定位功能:取得目前位置經度,依日期算當地 UTC offset
+   只取經度(緯度不影響真太陽時),時區依日期算以避免 DST 誤取
+   ============================================================ */
+// 用 IANA 時區名 + 指定日期,算出該日的 UTC offset(小時,可含 0.5/0.75)
+function tzOffsetForDate(timeZone, dateStr) {
+  try {
+    const d = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
+    // 用 longOffset 取得如 "GMT+08:00" / "GMT-04:00"
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' });
+    const parts = fmt.formatToParts(d);
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+    if (tzPart) {
+      const m = tzPart.value.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+      if (m) {
+        const sign = m[1] === '-' ? -1 : 1;
+        const h = parseInt(m[2], 10);
+        const min = m[3] ? parseInt(m[3], 10) : 0;
+        return sign * (h + min / 60);
+      }
+      if (/GMT$/.test(tzPart.value)) return 0; // 純 GMT = 0
+    }
+  } catch (e) { /* fall through */ }
+  return null;
+}
+
+function showGeoMsg(side, text, type) {
+  const el = document.getElementById('geoMsg' + side);
+  el.textContent = text;
+  el.className = 'geo-msg show ' + type;
+}
+
+function locateMe(side) {
+  const tab = document.getElementById('geoTab' + side);
+  if (!navigator.geolocation) {
+    showGeoMsg(side, '⚠ 此瀏覽器不支援定位功能,請手動選擇城市或輸入經度。', 'err');
+    return;
+  }
+  tab.disabled = true;
+  tab.textContent = '定位中…';
+  showGeoMsg(side, '正在取得目前位置…', 'ok');
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lonRaw = pos.coords.longitude;            // 東經正、西經負
+      const lon = Math.abs(lonRaw);
+      const hem = lonRaw >= 0 ? 'E' : 'W';
+      document.getElementById('lon' + side).value = lon.toFixed(4);
+      document.getElementById('hem' + side).value = hem;
+
+      // 時區:優先用裝置 IANA 時區(依日期算,避免 DST 誤取);
+      // 但若與經度推算差距過大(可能裝置時區≠定位點),改用經度估算並提示
+      const dateStr = document.getElementById('date' + side).value;
+      const ianaTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const deviceOff = tzOffsetForDate(ianaTz, dateStr);
+      const lonEstOff = Math.round(lonRaw / 15);  // 經度概略推算時區
+      let tzNote = '';
+      let useOff = null;
+
+      if (deviceOff !== null && Math.abs(deviceOff - lonEstOff) < 2) {
+        // 裝置時區與經度一致,採用裝置時區(含正確 DST)
+        useOff = deviceOff;
+        tzNote = ` · 時區 UTC${useOff >= 0 ? '+' : ''}${useOff}`;
+      } else if (deviceOff !== null) {
+        // 差距大:裝置時區可能與定位點不符,改用經度推算,提示確認
+        useOff = lonEstOff;
+        tzNote = ` · 時區概估 UTC${useOff >= 0 ? '+' : ''}${useOff}(裝置時區與定位點不一致,請確認)`;
+      } else {
+        useOff = lonEstOff;
+        tzNote = ` · 時區概估 UTC${useOff >= 0 ? '+' : ''}${useOff}(請確認)`;
+      }
+      document.getElementById('tz' + side).value = useOff;
+
+      // 城市下拉動態加「目前位置」選項並選中
+      const citySel = document.getElementById('city' + side);
+      let opt = Array.from(citySel.options).find(o => o.value === '📍 目前位置');
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = '📍 目前位置';
+        opt.textContent = '📍 目前位置';
+        citySel.insertBefore(opt, citySel.firstChild);
+      }
+      citySel.value = '📍 目前位置';
+
+      showGeoMsg(side, `✓ 已定位:經度 ${lon.toFixed(2)}°${hem === 'E' ? '東' : '西'}${tzNote}。可在下方微調經度。`, 'ok');
+      tab.disabled = false;
+      tab.textContent = '📍 目前位置';
+      compare();
+    },
+    (err) => {
+      let msg = '⚠ 定位失敗,請手動選擇城市。';
+      if (err.code === 1) msg = '⚠ 已拒絕定位權限,請手動選擇城市或輸入經度。';
+      else if (err.code === 2) msg = '⚠ 無法取得位置,請手動選擇城市。';
+      else if (err.code === 3) msg = '⚠ 定位逾時,請重試或手動選擇城市。';
+      showGeoMsg(side, msg, 'err');
+      tab.disabled = false;
+      tab.textContent = '📍 目前位置';
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+  );
+}
+
+function calcOne(side) {
+  const date = document.getElementById('date' + side).value;
+  const time = document.getElementById('time' + side).value;
+  const lon = parseFloat(document.getElementById('lon' + side).value) || 0;
+  const hem = document.getElementById('hem' + side).value;
+  const tz = parseFloat(document.getElementById('tz' + side).value) || 0;
+  if (!date || !time) return null;
+
+  const [yy, mm, dd] = date.split('-').map(Number);
+  const watchMin = minutesFromHM(time);
+  const gmtMin = watchMin - tz * 60;
+  // Et 依 GMT 時刻計算(Meeus 含小時項);gmtMin 可能跨日,換算回當天 UT 小時
+  const gmtHourUT = (((gmtMin % 1440) + 1440) % 1440) / 60;
+  const { eot, detail } = FengxiAstro.equationOfTime(yy, mm, dd, gmtHourUT);
+
+  const lonMin = lon * 4 * (hem === 'E' ? 1 : -1);
+  const trueMin = gmtMin + lonMin + eot;
+
+  const dayShift = Math.floor(trueMin / 1440);
+  const trueHM = hmFromMinutes(trueMin);
+  const baseDate = new Date(date + 'T12:00:00Z');
+  baseDate.setUTCDate(baseDate.getUTCDate() + dayShift);
+  const dateStr = `${baseDate.getUTCFullYear()}/${pad(baseDate.getUTCMonth()+1)}/${pad(baseDate.getUTCDate())}`;
+  const shichen = getShichen(((trueMin % 1440) + 1440) % 1440);
+
+  document.getElementById('result' + side).textContent = trueHM;
+  document.getElementById('dateOut' + side).textContent = dateStr + (dayShift !== 0 ? ` (跨日 ${dayShift > 0 ? '+' : ''}${dayShift})` : '');
+  document.getElementById('shichen' + side).textContent = shichen.name;
+  document.getElementById('shichenRange' + side).textContent = shichen.range;
+
+  const gmtSignNote = tz >= 0 ? `(UTC+${tz})` : `(UTC${tz})`;
+  const d3 = (x) => x.toFixed(3);
+  document.getElementById('steps' + side).innerHTML =
+    `① 手錶 ${time} ${gmtSignNote} → GMT <b>${hmFromMinutes(gmtMin)}</b><br>` +
+    `② 經度 ${lon}° × 4 = ${Math.abs(lonMin).toFixed(0)} 分 (${hem === 'E' ? '東,加' : '西,減'})<br>` +
+    `③ Et = ${fmtEotMS(eot)} <span style="color:#888">(Meeus §28)</span><br>` +
+    `④ <b>${trueHM}</b>` +
+    `<details class="astro-detail"><summary>天文計算明細 (Meeus §25)</summary>` +
+    `<table class="astro-table">` +
+    `<tr><td>儒略日 JD<span class="src">UT</span></td><td>${d3(detail.jdUT)}</td></tr>` +
+    `<tr><td>ΔT 時間修正<span class="src">NASA Espenak-Meeus</span></td><td>+${detail.deltaT.toFixed(1)} 秒</td></tr>` +
+    `<tr><td>儒略世紀數 T<span class="src">Meeus §22</span></td><td>${detail.T.toFixed(6)}</td></tr>` +
+    `<tr><td>平黃經 L₀<span class="src">Meeus §25.2</span></td><td>${d3(detail.L0)}°</td></tr>` +
+    `<tr><td>平近點角 M<span class="src">Meeus §25.3</span></td><td>${d3(detail.M)}°</td></tr>` +
+    `<tr><td>中心差 C<span class="src">Meeus §25.4</span></td><td>${detail.C.toFixed(4)}°</td></tr>` +
+    `<tr><td>章動參數 Ω<span class="src">Meeus §22</span></td><td>${d3(detail.omega)}°</td></tr>` +
+    `<tr><td>視黃經 λ<span class="src">Meeus §25.5</span></td><td>${d3(detail.appLon)}°</td></tr>` +
+    `<tr><td>太陽赤經 α<span class="src">Meeus §25</span></td><td>${d3(detail.alpha)}°</td></tr>` +
+    `<tr><td>黃赤交角 ε<span class="src">Meeus §22</span></td><td>${d3(detail.eps)}°</td></tr>` +
+    `<tr><td>均時差 Et<span class="src">Meeus §28</span></td><td><b>${fmtEotMS(eot)}</b> (${eot.toFixed(3)} 分)</td></tr>` +
+    `</table></details>`;
+
+  return { trueMin: ((trueMin % 1440) + 1440) % 1440, trueHM, dateStr, shichen, eot };
+}
+
+function compare() {
+  const a = calcOne('A');
+  const b = calcOne('B');
+  if (!a || !b) return;
+  const nameA = 'A 案';
+  const nameB = 'B 案';
+  const diff = Math.abs(a.trueMin - b.trueMin);
+  const diffMin = Math.min(diff, 1440 - diff);
+  const same = a.shichen.name === b.shichen.name;
+
+  let html = '<div class="compare-grid">';
+  html += `<div class="label">真太陽時</div><div><b>${a.trueHM}</b><span class="muted">${nameA}</span></div><div><b>${b.trueHM}</b><span class="muted">${nameB}</span></div>`;
+  html += `<div class="label">時辰</div><div><b>${a.shichen.name}</b><span class="muted">${a.shichen.range}</span></div><div><b>${b.shichen.name}</b><span class="muted">${b.shichen.range}</span></div>`;
+  html += `<div class="label">Et</div><div>${fmtEotMS(a.eot)}</div><div>${fmtEotMS(b.eot)}</div>`;
+  html += `<div class="label">日期</div><div>${a.dateStr}</div><div>${b.dateStr}</div>`;
+  html += '</div>';
+
+  if (same) {
+    html += `<div class="verdict same">✓ 兩案同為 <b>${a.shichen.name}</b>,時辰一致<div class="sub">真太陽時差 ${diffMin.toFixed(1)} 分鐘</div></div>`;
+  } else {
+    html += `<div class="verdict diff">⚠ 時辰不同:${nameA} 為 <b>${a.shichen.name}</b>,${nameB} 為 <b>${b.shichen.name}</b><div class="sub">真太陽時差 ${diffMin.toFixed(1)} 分鐘</div></div>`;
+  }
+  document.getElementById('compare').innerHTML = html;
+}
+
+fillCountry('countryA', '台灣');
+fillCountry('countryB', '台灣');
+fillCity('countryA', 'cityA', '台北');
+fillCity('countryB', 'cityB', '台北');
+applyCity('countryA', 'cityA', 'lonA', 'hemA', 'tzA');
+applyCity('countryB', 'cityB', 'lonB', 'hemB', 'tzB');
+
+// 預設值:當天日期 + 早上 08:00
+(function setDefaults() {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  document.getElementById('dateA').value = today;
+  document.getElementById('dateB').value = today;
+  document.getElementById('timeA').value = '08:00';
+  document.getElementById('timeB').value = '08:00';
+})();
+
+document.getElementById('countryA').addEventListener('change', () => { fillCity('countryA', 'cityA'); applyCity('countryA', 'cityA', 'lonA', 'hemA', 'tzA'); compare(); });
+document.getElementById('cityA').addEventListener('change', () => { applyCity('countryA', 'cityA', 'lonA', 'hemA', 'tzA'); compare(); });
+document.getElementById('countryB').addEventListener('change', () => { fillCity('countryB', 'cityB'); applyCity('countryB', 'cityB', 'lonB', 'hemB', 'tzB'); compare(); });
+document.getElementById('cityB').addEventListener('change', () => { applyCity('countryB', 'cityB', 'lonB', 'hemB', 'tzB'); compare(); });
+
+document.getElementById('geoTabA').addEventListener('click', () => locateMe('A'));
+document.getElementById('geoTabB').addEventListener('click', () => locateMe('B'));
+
+['dateA','timeA','lonA','hemA','tzA','dateB','timeB','lonB','hemB','tzB'].forEach(id => {
+  document.getElementById(id).addEventListener('input', compare);
+  document.getElementById(id).addEventListener('change', compare);
+});
+
+compare();
+</script>
+
+</body>
+</html>

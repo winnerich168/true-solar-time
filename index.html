@@ -676,7 +676,7 @@ const SHICHEN = [
 function pad(n) { return String(n).padStart(2, '0'); }
 function fmtMin(t) { const s = t < 0 ? -1 : 1; const a = Math.abs(t); const h = Math.floor(a / 60); const m = Math.round(a % 60); return (s < 0 ? '−' : '') + (h > 0 ? `${h}小時` : '') + `${m}分鐘`; }
 function minutesFromHM(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; }
-function hmFromMinutes(min) { let m = ((min % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(Math.round(m % 60))}`; }
+function hmFromMinutes(min) { let m = ((Math.round(min) % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
 function getShichen(min) {
   const hour = min / 60;
   for (const s of SHICHEN) {

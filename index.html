@@ -932,5 +932,18 @@ document.getElementById('geoTabB').addEventListener('click', () => locateMe('B')
 compare();
 </script>
 
+<!-- LINE 官方帳號加好友：右下角浮動按鈕 -->
+<a id="line-add-btn" href="https://line.me/R/ti/p/@941rizki" target="_blank" rel="noopener" aria-label="加入奉熙 LINE 官方帳號" title="加入奉熙 LINE 官方帳號，每天收擇日">
+  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="#fff" d="M12 3C6.48 3 2 6.6 2 11.04c0 3.98 3.55 7.31 8.35 7.94.33.07.77.22.88.5.1.25.07.65.03.9l-.14.85c-.04.25-.2.98.86.53 1.06-.45 5.72-3.37 7.8-5.77C21.27 14.4 22 12.8 22 11.04 22 6.6 17.52 3 12 3zM8.1 13.4H6.12a.52.52 0 0 1-.52-.52V8.92a.52.52 0 1 1 1.04 0v3.44H8.1a.52.52 0 1 1 0 1.04zm2.05-.52a.52.52 0 1 1-1.04 0V8.92a.52.52 0 1 1 1.04 0v3.96zm4.77 0a.52.52 0 0 1-.94.31l-2.03-2.76v2.45a.52.52 0 1 1-1.04 0V8.92a.52.52 0 0 1 .94-.31l2.03 2.76V8.92a.52.52 0 1 1 1.04 0v3.96zm3.2-2.5a.52.52 0 1 1 0 1.04h-1.46v.94h1.46a.52.52 0 1 1 0 1.04h-1.98a.52.52 0 0 1-.52-.52V8.92c0-.29.23-.52.52-.52h1.98a.52.52 0 1 1 0 1.04h-1.46v.94h1.46z"/></svg>
+  <span>加入LINE</span>
+</a>
+<style>
+#line-add-btn{position:fixed;right:20px;bottom:24px;z-index:9981;display:flex;align-items:center;gap:6px;
+  background:#06C755;color:#fff;text-decoration:none;padding:9px 16px 9px 12px;border-radius:28px;
+  font-size:14px;font-weight:700;letter-spacing:.04em;line-height:1;box-shadow:0 3px 14px rgba(0,0,0,.28);transition:transform .15s}
+#line-add-btn:hover{transform:translateY(-2px)}
+@media (max-width:480px){#line-add-btn{right:14px;bottom:16px;padding:10px}#line-add-btn span{display:none}}
+@media print{#line-add-btn{display:none}}
+</style>
 </body>
 </html>

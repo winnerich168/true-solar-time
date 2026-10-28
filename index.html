@@ -154,8 +154,11 @@ body {
 .geo-msg.show { display: block; }
 .geo-msg.ok { background: #E3F2EC; color: #0F6E56; }
 .geo-msg.err { background: #FAEEDA; color: #854F0B; }
-.badge.a { background: #E6F1FB; color: #0C447C; }
-.badge.b { background: #FAEEDA; color: #854F0B; }
+.panel-title { font-size: 14px; font-weight: 600; color: #2c2c2a; letter-spacing: .5px; }
+.ke-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin-top: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ke-list div { display: flex; justify-content: space-between; border-bottom: 0.5px dashed rgba(0,0,0,0.1); padding: 2px 0; }
+.ke-list span:first-child { color: #5f5e5a; }
+@media (max-width: 420px) { .ke-list { grid-template-columns: 1fr; } }
 
 .lbl { font-size: 12px; color: #5f5e5a; display: block; margin-bottom: 4px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -196,23 +199,6 @@ details.steps summary { font-size: 12px; color: #5f5e5a; cursor: pointer; paddin
 .astro-table td:last-child { text-align: right; color: #2c2c2a; font-variant-numeric: tabular-nums; }
 .astro-table .src { display: block; font-size: 9px; color: #aaa89f; font-family: -apple-system, "PingFang TC", sans-serif; margin-top: 1px; }
 
-.compare {
-  background: #fff;
-  border: 0.5px solid rgba(0,0,0,0.12);
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
-}
-.compare h3 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
-.compare-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px 16px; font-size: 13px; }
-.compare-grid .label { color: #5f5e5a; }
-.compare-grid .val b { font-weight: 500; }
-.compare-grid .muted { color: #888780; font-size: 11px; margin-left: 4px; }
-
-.verdict { border-top: 0.5px solid rgba(0,0,0,0.1); margin-top: 12px; padding-top: 12px; font-size: 13px; }
-.verdict.same { color: #0F6E56; }
-.verdict.diff { color: #BA7517; }
-.verdict .sub { color: #5f5e5a; margin: 4px 0 0; font-size: 12px; }
 
 input[type="text"][placeholder*="姓名"] { font-size: 12px; padding: 4px 8px; width: 110px; }
 
@@ -447,7 +433,7 @@ input[type="text"][placeholder*="姓名"] { font-size: 12px; padding: 4px 8px; w
 
     <div class="panel">
       <div class="panel-head">
-        <span class="badge a">A 案</span>
+        <span class="panel-title">手錶時間 → 真太陽時</span>
         <button type="button" class="geo-tab" id="geoTabA">📍 目前位置</button>
       </div>
       <div class="geo-msg" id="geoMsgA"></div>
@@ -479,13 +465,20 @@ input[type="text"][placeholder*="姓名"] { font-size: 12px; padding: 4px 8px; w
 
     <div class="panel">
       <div class="panel-head">
-        <span class="badge b">B 案</span>
+        <span class="panel-title">選日時 → 手錶時間區間</span>
         <button type="button" class="geo-tab" id="geoTabB">📍 目前位置</button>
       </div>
       <div class="geo-msg" id="geoMsgB"></div>
       <div class="row2">
         <div><label class="lbl">日期</label><input type="date" id="dateB" /></div>
-        <div><label class="lbl">手錶時間</label><input type="time" id="timeB" /></div>
+        <div><label class="lbl">時辰</label><select id="hourB">
+          <option value="23">子(23-01)</option><option value="1">丑(01-03)</option>
+          <option value="3">寅(03-05)</option><option value="5">卯(05-07)</option>
+          <option value="7">辰(07-09)</option><option value="9">巳(09-11)</option>
+          <option value="11">午(11-13)</option><option value="13">未(13-15)</option>
+          <option value="15">申(15-17)</option><option value="17">酉(17-19)</option>
+          <option value="19">戌(19-21)</option><option value="21">亥(21-23)</option>
+        </select></div>
       </div>
       <div class="row2">
         <div><label class="lbl">國家/地區</label><select id="countryB"></select></div>
@@ -497,22 +490,21 @@ input[type="text"][placeholder*="姓名"] { font-size: 12px; padding: 4px 8px; w
         <div><label class="lbl">時區</label><input type="number" id="tzB" step="0.5" /></div>
       </div>
       <div class="result-card">
-        <p class="l">真太陽時</p>
-        <p class="v" id="resultB">—</p>
-        <p class="m" id="dateOutB">—</p>
-      </div>
-      <div class="result-card">
-        <p class="l">對應時辰</p>
+        <p class="l" id="rangeLblB">真太陽時時辰</p>
         <p class="v" id="shichenB">—</p>
         <p class="m" id="shichenRangeB">—</p>
       </div>
+      <div class="result-card">
+        <p class="l">換成手錶時間</p>
+        <p class="v" id="watchRangeB">—</p>
+        <p class="m" id="offsetB">—</p>
+      </div>
+      <div class="result-card ke-card">
+        <p class="l">各刻（真太陽時刻 → 手錶）</p>
+        <div class="ke-list" id="keListB"></div>
+      </div>
       <details class="steps"><summary>推算過程</summary><div class="step-text" id="stepsB"></div></details>
     </div>
-  </div>
-
-  <div class="compare">
-    <h3>比對摘要</h3>
-    <div id="compare"></div>
   </div>
 
   <div class="footer">
@@ -874,29 +866,54 @@ function calcOne(side) {
   return { trueMin: ((trueMin % 1440) + 1440) % 1440, trueHM, dateStr, shichen, eot };
 }
 
-function compare() {
-  const a = calcOne('A');
-  const b = calcOne('B');
-  if (!a || !b) return;
-  const nameA = 'A 案';
-  const nameB = 'B 案';
-  const diff = Math.abs(a.trueMin - b.trueMin);
-  const diffMin = Math.min(diff, 1440 - diff);
-  const same = a.shichen.name === b.shichen.name;
+// 選日期＋時辰：把該時辰（真太陽時）的起訖與各刻換回手錶時間
+function calcRange(side) {
+  const date = document.getElementById('date' + side).value;
+  const startH = parseInt(document.getElementById('hour' + side).value, 10);
+  const lon = parseFloat(document.getElementById('lon' + side).value) || 0;
+  const hem = document.getElementById('hem' + side).value;
+  const tz = parseFloat(document.getElementById('tz' + side).value) || 0;
+  if (!date) return null;
 
-  let html = '<div class="compare-grid">';
-  html += `<div class="label">真太陽時</div><div><b>${a.trueHM}</b><span class="muted">${nameA}</span></div><div><b>${b.trueHM}</b><span class="muted">${nameB}</span></div>`;
-  html += `<div class="label">時辰</div><div><b>${a.shichen.name}</b><span class="muted">${a.shichen.range}</span></div><div><b>${b.shichen.name}</b><span class="muted">${b.shichen.range}</span></div>`;
-  html += `<div class="label">Et</div><div>${fmtEotMS(a.eot)}</div><div>${fmtEotMS(b.eot)}</div>`;
-  html += `<div class="label">日期</div><div>${a.dateStr}</div><div>${b.dateStr}</div>`;
-  html += '</div>';
+  const [yy, mm, dd] = date.split('-').map(Number);
+  const lonMin = lon * 4 * (hem === 'E' ? 1 : -1);
+  // 偏移 = 真太陽時 − 手錶;Et 取時辰中點對應的 GMT 時刻
+  const midTrue = startH * 60 + 60;
+  const gmtMid = midTrue - lonMin;
+  const { eot } = FengxiAstro.equationOfTime(yy, mm, dd, (((gmtMid % 1440) + 1440) % 1440) / 60);
+  const offset = lonMin - tz * 60 + eot;
 
-  if (same) {
-    html += `<div class="verdict same">✓ 兩案同為 <b>${a.shichen.name}</b>,時辰一致<div class="sub">真太陽時差 ${diffMin.toFixed(1)} 分鐘</div></div>`;
-  } else {
-    html += `<div class="verdict diff">⚠ 時辰不同:${nameA} 為 <b>${a.shichen.name}</b>,${nameB} 為 <b>${b.shichen.name}</b><div class="sub">真太陽時差 ${diffMin.toFixed(1)} 分鐘</div></div>`;
+  const sc = SHICHEN.find(x => x.start === startH) || SHICHEN[0];
+  const w0 = startH * 60 - offset, w1 = w0 + 120;
+  const crossDay = Math.floor(w0 / 1440) !== Math.floor((w1 - 1) / 1440) || w0 < 0;
+
+  document.getElementById('rangeLbl' + side).textContent = `真太陽時時辰(${date.replace(/-/g, '/')})`;
+  document.getElementById('shichen' + side).textContent = sc.name;
+  document.getElementById('shichenRange' + side).textContent = sc.range;
+  document.getElementById('watchRange' + side).textContent = `${hmFromMinutes(w0)}–${hmFromMinutes(w1)}`;
+  document.getElementById('offset' + side).textContent =
+    `真太陽時與手錶相差 ${offset >= 0 ? '+' : ''}${fmtMin(offset)}` + (crossDay ? ' · 區間跨日' : '');
+
+  let ke = '';
+  for (let k = 0; k < 8; k++) {
+    const t = w0 + k * 15;
+    ke += `<div><span>${k + 1}刻</span><span>${hmFromMinutes(t)}~${hmFromMinutes(t + 15)}</span></div>`;
   }
-  document.getElementById('compare').innerHTML = html;
+  document.getElementById('keList' + side).innerHTML = ke;
+
+  const gmtSignNote = tz >= 0 ? `UTC+${tz}` : `UTC${tz}`;
+  document.getElementById('steps' + side).innerHTML =
+    `① 經度 ${lon}° × 4 = ${Math.abs(lonMin).toFixed(0)} 分 (${hem === 'E' ? '東,加' : '西,減'})<br>` +
+    `② 時區 ${gmtSignNote} → 減 ${Math.abs(tz * 60)} 分<br>` +
+    `③ Et = ${fmtEotMS(eot)} <span style="color:#888">(取時辰中點,Meeus §28)</span><br>` +
+    `④ 真太陽時 − 手錶 = <b>${offset >= 0 ? '+' : ''}${offset.toFixed(1)} 分</b><br>` +
+    `⑤ ${sc.name} ${sc.range} − 偏移 → 手錶 <b>${hmFromMinutes(w0)}–${hmFromMinutes(w1)}</b>`;
+  return { offset, sc };
+}
+
+function compare() {
+  calcOne('A');
+  calcRange('B');
 }
 
 fillCountry('countryA', '台灣');
@@ -913,7 +930,7 @@ applyCity('countryB', 'cityB', 'lonB', 'hemB', 'tzB');
   document.getElementById('dateA').value = today;
   document.getElementById('dateB').value = today;
   document.getElementById('timeA').value = '08:00';
-  document.getElementById('timeB').value = '08:00';
+  document.getElementById('hourB').value = '11';
 })();
 
 document.getElementById('countryA').addEventListener('change', () => { fillCity('countryA', 'cityA'); applyCity('countryA', 'cityA', 'lonA', 'hemA', 'tzA'); compare(); });
@@ -924,7 +941,7 @@ document.getElementById('cityB').addEventListener('change', () => { applyCity('c
 document.getElementById('geoTabA').addEventListener('click', () => locateMe('A'));
 document.getElementById('geoTabB').addEventListener('click', () => locateMe('B'));
 
-['dateA','timeA','lonA','hemA','tzA','dateB','timeB','lonB','hemB','tzB'].forEach(id => {
+['dateA','timeA','lonA','hemA','tzA','dateB','hourB','lonB','hemB','tzB'].forEach(id => {
   document.getElementById(id).addEventListener('input', compare);
   document.getElementById(id).addEventListener('change', compare);
 });

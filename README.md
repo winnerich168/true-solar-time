@@ -72,7 +72,7 @@ MIT License — 詳見 [LICENSE](LICENSE) 檔案。
 
 ## 作者 Author
 
-**林勝烽 (Lin Sheng-Feng)**
+**Richard Lin**
 奉熙易理研究所 · [winnerich.com](https://winnerich.com)
 
 ## 貢獻 Contributing
